@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>almost.</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --text: #e8e8e8;
+    --secondary: #9aa0a6;
+    --accent: #6c8cff;
+    --error: #ff6b6b;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 300;
+    cursor: default;
+    user-select: none;
+  }
+
+  /* Subtle bg grain */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* Parallax bg orb */
+  .bg-orb {
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(108,140,255,0.025) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; z-index: 0;
+    transition: transform 8s ease;
+    animation: orbDrift 20s ease-in-out infinite alternate;
+  }
+  @keyframes orbDrift {
+    0%   { transform: translate(-52%, -48%) scale(1); }
+    100% { transform: translate(-48%, -52%) scale(1.08); }
+  }
+
+  /* Stage wrapper */
+  .stage {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+  }
+  .stage.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .stage-inner {
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Typography */
+  .line {
+    display: block;
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(8px);
+    transition: opacity 1.4s ease, filter 1.4s ease, transform 1.4s ease;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+  }
+  .line.visible {
+    opacity: 1; filter: blur(0); transform: translateY(0);
+  }
+  .line.heading {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 28px;
+  }
+  .line.body {
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+    color: var(--secondary);
+    margin-bottom: 16px;
+  }
+  .line.italic {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.15rem);
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .line.glow {
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(108,140,255,0.35);
+  }
+  .line.sad {
+    color: var(--error);
+  }
+  .line.tiny {
+    font-size: 0.78rem;
+    color: var(--secondary);
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+  }
+  .line.tiny.visible { opacity: 0.55; }
+
+  /* Button */
+  .btn {
+    display: inline-block;
+    margin-top: 48px;
+    padding: 12px 36px;
+    border: 1px solid rgba(232,232,232,0.25);
+    background: transparent;
+    color: var(--secondary);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.4s, color 0.4s, box-shadow 0.4s, opacity 0.4s;
+    opacity: 0;
+  }
+  .btn.visible { opacity: 1; }
+  .btn:hover {
+    border-color: rgba(108,140,255,0.6);
+    color: var(--text);
+    box-shadow: 0 0 18px rgba(108,140,255,0.18);
+  }
+
+  /* Music toggle */
+  #music-btn {
+    position: fixed; top: 28px; right: 28px;
+    z-index: 100;
+    background: none; border: none;
+    color: var(--secondary);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0;
+    transition: opacity 0.8s ease, color 0.3s;
+    text-transform: uppercase;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 300;
+  }
+  #music-btn.show { opacity: 1; }
+  #music-btn:hover { color: var(--text); }
+  #music-btn .icon { font-size: 1rem; }
+
+  /* Stage number */
+  #stage-num {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: rgba(154,160,166,0.3);
+    z-index: 100;
+    font-family: 'Poppins', sans-serif;
+    transition: opacity 0.6s;
+  }
+
+  /* Fake loading */
+  #loading-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px;
+  }
+  #loading-screen .load-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--secondary);
+    font-style: italic;
+    opacity: 0;
+    animation: fadeIn 1s ease 0.5s forwards;
+  }
+  #loading-screen .load-sub {
+    font-size: 0.72rem;
+    color: rgba(154,160,166,0.4);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.5s forwards;
+  }
+  #loading-bar {
+    width: 160px; height: 1px;
+    background: rgba(154,160,166,0.12);
+    position: relative; overflow: hidden;
+    opacity: 0;
+    animation: fadeIn 0.6s ease 1s forwards;
+  }
+  #loading-bar::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(108,140,255,0.5), transparent);
+    animation: loadScan 2s ease 1.2s forwards;
+  }
+  @keyframes loadScan {
+    0%   { left: -100%; }
+    100% { left: 100%; }
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* Chat UI (Stage 5) */
+  .chat-ui {
+    width: 100%; max-width: 320px;
+    margin: 0 auto 32px;
+    display: flex; flex-direction: column; gap: 10px;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .chat-ui.visible { opacity: 1; }
+  .chat-bubble {
+    align-self: flex-end;
+    background: rgba(108,140,255,0.07);
+    border: 1px solid rgba(108,140,255,0.12);
+    border-radius: 18px 18px 4px 18px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    color: rgba(232,232,232,0.35);
+    text-align: left;
+    position: relative;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 1s ease, transform 1s ease;
+    font-style: italic;
+  }
+  .chat-bubble.show { opacity: 1; transform: translateY(0); }
+  .chat-bubble .unsent-tag {
+    font-size: 0.62rem;
+    color: rgba(154,160,166,0.35);
+    display: block;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  /* Rain (Stage 7) */
+  #rain-canvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+  #rain-canvas.show { opacity: 1; }
+
+  /* Cursor blink for Stage 8 */
+  .blink-cursor::after {
+    content: '|';
+    animation: blink 1.2s step-end infinite;
+    color: rgba(154,160,166,0.5);
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Hidden easter egg toast */
+  #easter-egg {
+    position: fixed; bottom: 60px; left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(20,20,20,0.9);
+    border: 1px solid rgba(154,160,166,0.1);
+    color: var(--secondary);
+    font-size: 0.78rem;
+    font-style: italic;
+    padding: 10px 20px;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    white-space: nowrap;
+    z-index: 300;
+  }
+  #easter-egg.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Blue accent pulse (Stage 4) */
+  .accent-pulse {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(108,140,255,0.04) 0%, transparent 65%);
+    pointer-events: none; z-index: 1;
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+  .accent-pulse.show { opacity: 1; }
+
+  /* Stage 9 birthday glow */
+  .birthday-glow {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(232,232,232,0.02) 0%, transparent 70%);
+    pointer-events: none; z-index: 1;
+    opacity: 0;
+    transition: opacity 3s ease;
+  }
+  .birthday-glow.show { opacity: 1; }
+
+  /* Stage 10 final */
+  .final-sig {
+    margin-top: 64px;
+    font-size: 0.72rem;
+    color: rgba(154,160,166,0.3);
+    letter-spacing: 0.08em;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+  .final-sig.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading-screen">
+  <div class="load-text">Loading memories…</div>
+  <div id="loading-bar"></div>
+  <div class="load-sub">Nothing found.</div>
+</div>
+
+<!-- Background orb -->
+<div class="bg-orb"></div>
+
+<!-- Accent pulse (stages 4+) -->
+<div class="accent-pulse" id="accent-pulse"></div>
+<div class="birthday-glow" id="birthday-glow"></div>
+
+<!-- Rain canvas -->
+<canvas id="rain-canvas"></canvas>
+
+<!-- Music button -->
+<button id="music-btn">
+  <span class="icon">♫</span>
+  <span id="music-label">music off</span>
+</button>
+
+<!-- Stage counter -->
+<div id="stage-num"></div>
+
+<!-- Easter egg toast -->
+<div id="easter-egg">there's nothing hidden here… just like us.</div>
+
+<!-- Audio (ambient piano loop via tone synth in JS) -->
+<audio id="ambient-audio" loop preload="none">
+  <!-- We'll generate tone with Web Audio API instead -->
+</audio>
+
+<!-- ═══════════════════════════ STAGES ═══════════════════════════ -->
+
+<!-- Stage 1: Nothing -->
+<div class="stage" id="stage-1">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="800">There's nothing here.</span>
+    <span class="line body" data-delay="3800">Just like… there was nothing between us.</span>
+    <button class="btn" data-delay="6500" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 2: Existence -->
+<div class="stage" id="stage-2">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="600">We existed…</span>
+    <span class="line italic" data-delay="2200">in the same space.</span>
+    <span class="line body" data-delay="4200">But never in the same story.</span>
+    <button class="btn" data-delay="7000" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 3: Almost Moments -->
+<div class="stage" id="stage-3">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="600">There were moments…</span>
+    <span class="line body" data-delay="2800">that felt like they could become something.</span>
+    <span class="line italic" data-delay="5200">But they never did.</span>
+    <button class="btn" data-delay="8000" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 4: Imagined Reality -->
+<div class="stage" id="stage-4">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="600">I created versions of us…</span>
+    <span class="line body" data-delay="2600">in my head.</span>
+    <span class="line italic glow" data-delay="4800">In those versions… you actually stayed.</span>
+    <button class="btn" data-delay="7800" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 5: Unsent -->
+<div class="stage" id="stage-5">
+  <div class="stage-inner">
+    <div class="chat-ui" id="chat-ui">
+      <div class="chat-bubble" id="cb1">"Hey…"<span class="unsent-tag">not sent</span></div>
+      <div class="chat-bubble" id="cb2">"Are you free?"<span class="unsent-tag">not sent</span></div>
+      <div class="chat-bubble" id="cb3">"I wanted to tell you something…"<span class="unsent-tag">not sent</span></div>
+    </div>
+    <span class="line body" data-delay="5500" style="color:rgba(154,160,166,0.6)">Some messages are better left unsent.</span>
+    <button class="btn" data-delay="8000" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 6: Truth -->
+<div class="stage" id="stage-6">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="600">You didn't ignore me.</span>
+    <span class="line body" data-delay="2800">You just… never saw me that way.</span>
+    <span class="line italic sad" data-delay="5400">And I saw you… too much.</span>
+    <button class="btn" data-delay="8500" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 7: Acceptance -->
+<div class="stage" id="stage-7">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="800">It's strange…</span>
+    <span class="line body" data-delay="3000">How something that never started…</span>
+    <span class="line italic" data-delay="5200">can still hurt this much.</span>
+    <button class="btn" data-delay="8500" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 8: Silence -->
+<div class="stage" id="stage-8">
+  <div class="stage-inner">
+    <span class="line heading blink-cursor" data-delay="1000" id="silence-line">I stayed quiet.</span>
+    <span class="line body" data-delay="7000">Because I knew…</span>
+    <span class="line italic" data-delay="9500">silence would hurt less than the truth.</span>
+    <button class="btn" data-delay="13000" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 9: Birthday -->
+<div class="stage" id="stage-9">
+  <div class="stage-inner">
+    <span class="line body" data-delay="800" style="color:rgba(154,160,166,0.5)">Anyway…</span>
+    <span class="line heading" data-delay="3000">Happy Birthday.</span>
+    <span class="line body" data-delay="5800">I hope you're happy…</span>
+    <span class="line italic" data-delay="8000">in ways I couldn't be part of.</span>
+    <button class="btn" data-delay="11000" onclick="nextStage()">continue</button>
+  </div>
+</div>
+
+<!-- Stage 10: End -->
+<div class="stage" id="stage-10">
+  <div class="stage-inner">
+    <span class="line heading" data-delay="1200">You'll never know…</span>
+    <span class="line body" data-delay="4500">And maybe…</span>
+    <span class="line italic" data-delay="6800">that's how it should be.</span>
+    <div class="final-sig" id="final-sig">— someone who almost mattered</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentStage = 0;
+let musicOn = false;
+let audioCtx = null;
+let musicNodes = [];
+let easterEggShown = false;
+
+// ═══════════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════════
+setTimeout(() => {
+  const ls = document.getElementById('loading-screen');
+  ls.style.transition = 'opacity 1.2s ease';
+  ls.style.opacity = '0';
+  setTimeout(() => {
+    ls.style.display = 'none';
+    goToStage(1);
+  }, 1200);
+}, 4000);
+
+// ═══════════════════════════════════════════════
+// STAGE SYSTEM
+// ═══════════════════════════════════════════════
+function goToStage(n) {
+  // Hide previous
+  document.querySelectorAll('.stage').forEach(s => {
+    s.classList.remove('active');
+  });
+  // Reset all lines in new stage
+  const stage = document.getElementById(`stage-${n}`);
+  if (!stage) return;
+  currentStage = n;
+
+  // Update stage counter
+  const sn = document.getElementById('stage-num');
+  sn.textContent = n < 10 ? `0${n} / 10` : `10 / 10`;
+
+  // Reset lines & btn
+  stage.querySelectorAll('.line, .btn').forEach(el => {
+    el.classList.remove('visible');
+  });
+
+  // Special resets
+  if (n === 5) {
+    document.querySelectorAll('.chat-bubble').forEach(b => b.classList.remove('show'));
+    document.getElementById('chat-ui').classList.remove('visible');
+  }
+
+  // Activate
+  stage.classList.add('active');
+
+  // Special stage setups
+  if (n === 4) {
+    document.getElementById('accent-pulse').classList.add('show');
+  }
+  if (n === 5) {
+    startMusic();
+    document.getElementById('music-btn').classList.add('show');
+    // Show chat bubbles with delays
+    setTimeout(() => {
+      document.getElementById('chat-ui').classList.add('visible');
+    }, 800);
+    setTimeout(() => document.getElementById('cb1').classList.add('show'), 1400);
+    setTimeout(() => document.getElementById('cb2').classList.add('show'), 2600);
+    setTimeout(() => document.getElementById('cb3').classList.add('show'), 4000);
+  }
+  if (n === 7) {
+    startRain();
+  } else {
+    stopRain();
+  }
+  if (n === 9) {
+    document.getElementById('birthday-glow').classList.add('show');
+  }
+  if (n === 10) {
+    setTimeout(() => {
+      document.getElementById('final-sig').classList.add('visible');
+    }, 10000);
+  }
+
+  // Schedule line reveals
+  stage.querySelectorAll('.line, .btn').forEach(el => {
+    const delay = parseInt(el.dataset.delay || 0);
+    setTimeout(() => el.classList.add('visible'), delay);
+  });
+}
+
+function nextStage() {
+  if (currentStage >= 10) return;
+  const curr = document.getElementById(`stage-${currentStage}`);
+  curr.style.opacity = '0';
+  curr.style.pointerEvents = 'none';
+  setTimeout(() => {
+    curr.classList.remove('active');
+    curr.style.opacity = '';
+    curr.style.pointerEvents = '';
+    goToStage(currentStage + 1);
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════
+// AMBIENT MUSIC (Web Audio API generative piano)
+// ═══════════════════════════════════════════════
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+const pianoNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+const sadChords = [
+  [261.63, 311.13, 392.00], // Cm
+  [233.08, 277.18, 349.23], // Bbm
+  [196.00, 246.94, 293.66], // Gm
+  [220.00, 261.63, 329.63], // Am
+];
+let musicInterval = null;
+let masterGain = null;
+
+function playChord(frequencies, when, duration) {
+  const ctx = getAudioCtx();
+  frequencies.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, when);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, when);
+
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(0.04 - i * 0.008, when + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, when + duration);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start(when);
+    osc.stop(when + duration + 0.1);
+    musicNodes.push(osc, gain);
+  });
+}
+
+function startMusic() {
+  if (musicOn) return;
+  musicOn = true;
+  document.getElementById('music-label').textContent = 'music on';
+
+  const ctx = getAudioCtx();
+  masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0, ctx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 3);
+
+  // Add reverb-like convolver
+  const reverb = createReverb(ctx);
+  masterGain.connect(reverb);
+  reverb.connect(ctx.destination);
+
+  let chordIndex = 0;
+  function scheduleNext() {
+    if (!musicOn) return;
+    const now = ctx.currentTime;
+    const chord = sadChords[chordIndex % sadChords.length];
+    playChord(chord, now, 3.5);
+    // Solo note on top
+    const note = pianoNotes[Math.floor(Math.random() * pianoNotes.length)];
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(note * 2, now + 0.5);
+    g.gain.setValueAtTime(0, now + 0.5);
+    g.gain.linearRampToValueAtTime(0.018, now + 0.7);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(now + 0.5); osc.stop(now + 2.6);
+    musicNodes.push(osc, g);
+    chordIndex++;
+    musicInterval = setTimeout(scheduleNext, 3800);
+  }
+  scheduleNext();
+}
+
+function stopMusic() {
+  musicOn = false;
+  document.getElementById('music-label').textContent = 'music off';
+  if (masterGain) {
+    const ctx = getAudioCtx();
+    masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+  }
+  clearTimeout(musicInterval);
+}
+
+function createReverb(ctx) {
+  const convolver = ctx.createConvolver();
+  const rate = ctx.sampleRate;
+  const length = rate * 2.5;
+  const impulse = ctx.createBuffer(2, length, rate);
+  for (let c = 0; c < 2; c++) {
+    const ch = impulse.getChannelData(c);
+    for (let i = 0; i < length; i++) {
+      ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+    }
+  }
+  convolver.buffer = impulse;
+  return convolver;
+}
+
+document.getElementById('music-btn').addEventListener('click', () => {
+  if (musicOn) stopMusic(); else startMusic();
+});
+
+// ═══════════════════════════════════════════════
+// RAIN
+// ═══════════════════════════════════════════════
+const rainCanvas = document.getElementById('rain-canvas');
+const rCtx = rainCanvas.getContext('2d');
+let drops = [];
+let rainAF;
+let raining = false;
+
+function startRain() {
+  rainCanvas.width = window.innerWidth;
+  rainCanvas.height = window.innerHeight;
+  drops = Array.from({length: 80}, () => ({
+    x: Math.random() * rainCanvas.width,
+    y: Math.random() * rainCanvas.height,
+    speed: 0.6 + Math.random() * 1.2,
+    length: 10 + Math.random() * 20,
+    opacity: 0.03 + Math.random() * 0.07
+  }));
+  raining = true;
+  rainCanvas.classList.add('show');
+  animateRain();
+}
+
+function stopRain() {
+  raining = false;
+  rainCanvas.classList.remove('show');
+  cancelAnimationFrame(rainAF);
+}
+
+function animateRain() {
+  if (!raining) return;
+  rCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+  drops.forEach(d => {
+    rCtx.beginPath();
+    rCtx.moveTo(d.x, d.y);
+    rCtx.lineTo(d.x - 1, d.y + d.length);
+    rCtx.strokeStyle = `rgba(154,160,166,${d.opacity})`;
+    rCtx.lineWidth = 0.5;
+    rCtx.stroke();
+    d.y += d.speed;
+    if (d.y > rainCanvas.height) { d.y = -d.length; d.x = Math.random() * rainCanvas.width; }
+  });
+  rainAF = requestAnimationFrame(animateRain);
+}
+
+window.addEventListener('resize', () => {
+  if (raining) { rainCanvas.width = window.innerWidth; rainCanvas.height = window.innerHeight; }
+});
+
+// ═══════════════════════════════════════════════
+// EASTER EGG — random click
+// ═══════════════════════════════════════════════
+let eggCooldown = false;
+document.body.addEventListener('click', (e) => {
+  // Don't trigger on buttons
+  if (e.target.closest('button') || e.target.closest('.btn')) return;
+  if (eggCooldown) return;
+  eggCooldown = true;
+  const egg = document.getElementById('easter-egg');
+  egg.classList.add('show');
+  setTimeout(() => {
+    egg.classList.remove('show');
+    setTimeout(() => eggCooldown = false, 800);
+  }, 3000);
+});
+</script>
+</body>
+</html>
